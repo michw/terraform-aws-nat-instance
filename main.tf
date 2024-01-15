@@ -9,9 +9,10 @@ resource "aws_security_group_rule" "egress" {
   security_group_id = aws_security_group.this.id
   type              = "egress"
   cidr_blocks       = ["0.0.0.0/0"]
+  ipv6_cidr_blocks  = ["::/0"]
   from_port         = 0
   to_port           = 65535
-  protocol          = "tcp"
+  protocol          = "all"
 }
 
 resource "aws_security_group_rule" "ingress_any" {
@@ -21,6 +22,15 @@ resource "aws_security_group_rule" "ingress_any" {
   from_port         = 0
   to_port           = 65535
   protocol          = "all"
+}
+
+resource "aws_security_group_rule" "ingress_ssh" {
+  security_group_id = aws_security_group.this.id
+  type              = "ingress"
+  cidr_blocks       = ["0.0.0.0/0"]
+  from_port         = 2222
+  to_port           = 2222
+  protocol          = "tcp"
 }
 
 resource "aws_network_interface" "this" {
@@ -68,6 +78,7 @@ resource "aws_launch_template" "this" {
   name_prefix = var.name
   image_id    = var.image_id != "" ? var.image_id : data.aws_ami.this.id
   key_name    = var.key_name
+  update_default_version = true
 
   iam_instance_profile {
     arn = aws_iam_instance_profile.this.arn
@@ -75,13 +86,27 @@ resource "aws_launch_template" "this" {
 
   metadata_options {
     http_endpoint = "enabled"
+    http_protocol_ipv6 = "enabled"
     http_tokens   = "required"
   }
 
   network_interfaces {
-    associate_public_ip_address = true
+    #associate_public_ip_address = true
+    associate_public_ip_address = false
+    ipv6_address_count = 1
     security_groups             = [aws_security_group.this.id]
     delete_on_termination       = true
+  }
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_size = 8
+      delete_on_termination = true
+      encrypted = true
+      volume_type = "gp3"
+    }
   }
 
   tag_specifications {
@@ -126,6 +151,11 @@ resource "aws_autoscaling_group" "this" {
   max_size            = 1
   vpc_zone_identifier = [var.public_subnet]
 
+  instance_maintenance_policy {
+    min_healthy_percentage = 0
+    max_healthy_percentage = 100
+  }
+
   mixed_instances_policy {
     instances_distribution {
       on_demand_base_capacity                  = var.use_spot_instance ? 0 : 1
@@ -150,7 +180,7 @@ resource "aws_autoscaling_group" "this" {
     content {
       key                 = tag.key
       value               = tag.value
-      propagate_at_launch = false
+      propagate_at_launch = true
     }
   }
 
@@ -189,6 +219,12 @@ EOF
 resource "aws_iam_role_policy_attachment" "ssm" {
   policy_arn = var.ssm_policy_arn
   role       = aws_iam_role.this.name
+}
+
+resource "aws_iam_role_policy_attachment" "managed" {
+  for_each   = var.managed_policy_arns
+  role       = aws_iam_role.this.name
+  policy_arn = each.key
 }
 
 resource "aws_iam_role_policy" "eni" {

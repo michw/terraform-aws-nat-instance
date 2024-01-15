@@ -18,7 +18,12 @@ rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
 ip route del default dev eth0
 
 # wait for network connection
-curl --retry 10 http://www.example.com
+curl -6 --retry 10 http://www.example.com
+
+# disable ipv6
+sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sysctl -w net.ipv6.conf.default.disable_ipv6=1
+sysctl -w net.ipv6.conf.lo.disable_ipv6=1
 
 # reestablish connections
 systemctl restart amazon-ssm-agent.service

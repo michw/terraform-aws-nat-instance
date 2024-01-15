@@ -68,7 +68,7 @@ variable "user_data_write_files" {
 
 variable "user_data_runcmd" {
   description = "Additional runcmd section of cloud-init"
-  type        = list(list(string))
+  type        = list(string)
   default     = []
 }
 
@@ -77,7 +77,7 @@ locals {
   // User-specified tags take precedence over the default.
   common_tags = merge(
     {
-      Name = "nat-instance-${var.name}"
+      Name = var.name
     },
     var.tags,
   )
@@ -87,4 +87,10 @@ variable "ssm_policy_arn" {
   description = "SSM Policy to be attached to instance profile"
   type        = string
   default     = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+variable "managed_policy_arns" {
+  type        = set(string)
+  description = "List of managed policies to attach to created role"
+  default     = []
 }
