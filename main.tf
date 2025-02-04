@@ -24,15 +24,6 @@ resource "aws_security_group_rule" "ingress_any" {
   protocol          = "all"
 }
 
-resource "aws_security_group_rule" "ingress_ssh" {
-  security_group_id = aws_security_group.this.id
-  type              = "ingress"
-  cidr_blocks       = ["0.0.0.0/0"]
-  from_port         = 2222
-  to_port           = 2222
-  protocol          = "tcp"
-}
-
 resource "aws_network_interface" "this" {
   security_groups   = [aws_security_group.this.id]
   subnet_id         = var.public_subnet
