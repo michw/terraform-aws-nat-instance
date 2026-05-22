@@ -53,7 +53,7 @@ data "aws_ami" "this" {
   }
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*"]
+    values = ["al2023-ami-2023*"]
   }
   filter {
     name   = "virtualization-type"
@@ -61,13 +61,14 @@ data "aws_ami" "this" {
   }
   filter {
     name   = "block-device-mapping.volume-type"
-    values = ["gp2"]
+    values = ["gp3"]
   }
 }
 
 resource "aws_launch_template" "this" {
   name_prefix = var.name
-  image_id    = var.image_id != "" ? var.image_id : data.aws_ami.this.id
+  #image_id    = var.image_id != "" ? var.image_id : data.aws_ami.this.id
+  image_id    = var.image_id != "" ? var.image_id : "resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-minimal-kernel-default-arm64"
   key_name    = var.key_name
   update_default_version = true
 
