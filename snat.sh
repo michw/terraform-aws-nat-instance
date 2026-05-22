@@ -2,20 +2,20 @@
 set -x
 
 # wait for eth1
-while ! ip link show dev eth1; do
+while ! ip link show dev ens6; do
   sleep 1
 done
 
 # enable IP forwarding and NAT
 sysctl -q -w net.ipv4.ip_forward=1
-sysctl -q -w net.ipv4.conf.eth1.send_redirects=0
-iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
+sysctl -q -w net.ipv4.conf.ens6.send_redirects=0
+iptables -t nat -A POSTROUTING -o ens6 -j MASQUERADE
 
 # prevent setting the default route to eth0 after reboot
 rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
 
 # switch the default route to eth1
-ip route del default dev eth0
+ip route del default dev ens5
 
 # wait for network connection
 curl -6 --retry 10 http://www.example.com
