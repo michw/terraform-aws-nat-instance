@@ -80,6 +80,7 @@ resource "aws_launch_template" "this" {
     http_endpoint = "enabled"
     http_protocol_ipv6 = "enabled"
     http_tokens   = "required"
+    instance_metadata_tags = "enabled"
   }
 
   network_interfaces {
@@ -229,7 +230,12 @@ resource "aws_iam_role_policy" "eni" {
         {
             "Effect": "Allow",
             "Action": [
-                "ec2:AttachNetworkInterface"
+                "ec2:AssociateAddress",
+                "ec2:AttachNetworkInterface",
+                "ec2:AllocateAddress",
+                "ec2:CreateTags",
+                "ec2:DisassociateAddress",
+                "ec2:ReleaseAddress"
             ],
             "Resource": "*"
         }
